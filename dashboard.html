@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Dardanex Client Dashboard - Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+        }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .card { 
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04); 
+            border: 1px solid rgba(229, 231, 235, 0.8);
+            transition: all 0.3s ease;
+        }
+        .card:hover { 
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08); 
+            transform: translateY(-2px);
+        }
+        .badge { 
+            display: inline-flex; 
+            align-items: center; 
+            border-radius: 20px; 
+            padding: 4px 12px; 
+            font-size: 0.75rem; 
+            font-weight: 500; 
+        }
+        .btn { 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 8px; 
+            font-size: 0.875rem; 
+            font-weight: 500; 
+            transition: all 0.2s ease; 
+            outline: none; 
+            cursor: pointer;
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
+            color: white; 
+            height: 40px; 
+            padding: 0 16px; 
+            border: none;
+        }
+        .btn-primary:hover { 
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        .input { 
+            display: flex; 
+            height: 40px; 
+            width: 100%; 
+            border-radius: 8px; 
+            border: 1px solid #d1d5db; 
+            background: white; 
+            padding: 0 12px; 
+            font-size: 0.875rem; 
+            transition: all 0.2s ease;
+        }
+        .input:focus { 
+            outline: none; 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .select { 
+            display: flex; 
+            height: 40px; 
+            width: 100%; 
+            align-items: center; 
+            justify-content: space-between; 
+            border-radius: 8px; 
+            border: 1px solid #d1d5db; 
+            background: white; 
+            padding: 0 12px; 
+            font-size: 0.875rem; 
+            transition: all 0.2s ease;
+        }
+        .select:focus { 
+            outline: none; 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .status-online { background-color: #10b981; }
+        .status-idle { background-color: #f59e0b; }
+        .status-offline { background-color: #6b7280; }
+        .gradient-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b);
+        }
+        .client-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #3b82f6;
+        }
+        .client-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+        .chart-container {
+            height: 120px;
+            display: flex;
+            align-items: flex-end;
+            padding: 0 10px;
+        }
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(to top, #3b82f6, #60a5fa);
+            margin: 0 2px;
+            border-radius: 3px 3px 0 0;
+            min-height: 5px;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <div class="gradient-header shadow-lg">
+        <div class="max-w-7xl mx-auto px-6 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold">Client Dashboard</h1>
+                    <p class="text-blue-100 mt-1">Real-time monitoring of client connections and activity Dardanex - Demo</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-500/20 rounded-lg px-3 py-2">
+                        <div class="flex items-center space-x-2 text-sm">
+                            <i data-lucide="refresh-cw" class="h-4 w-4 animate-spin"></i>
+                            <span id="lastUpdated">Last updated: --:--:--</span>
+                        </div>
+                    </div>
+                    <div class="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+                        <i data-lucide="user" class="h-5 w-5 text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto p-6 space-y-6">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="stat-card card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-sm font-medium text-gray-500">Total Clients</div>
+                    <div class="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center">
+                        <i data-lucide="users" class="h-5 w-5 text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900" id="totalClients">0</div>
+                <div class="text-xs text-gray-500 mt-1">All registered clients</div>
+            </div>
+
+            <div class="stat-card card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-sm font-medium text-gray-500">Active Now</div>
+                    <div class="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center">
+                        <i data-lucide="user-check" class="h-5 w-5 text-green-600"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900" id="activeClients">0</div>
+                <div class="badge bg-green-100 text-green-800 mt-2" id="activePercentage">0% online</div>
+            </div>
+
+            <div class="stat-card card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-sm font-medium text-gray-500">Idle Clients</div>
+                    <div class="h-10 w-10 rounded-full bg-yellow-50 flex items-center justify-center">
+                        <i data-lucide="clock" class="h-5 w-5 text-yellow-600"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900" id="idleClients">0</div>
+                <div class="text-xs text-gray-500 mt-1">Away from keyboard</div>
+            </div>
+
+            <div class="stat-card card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-sm font-medium text-gray-500">Peak Connections</div>
+                    <div class="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center">
+                        <i data-lucide="trending-up" class="h-5 w-5 text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900" id="peakConnections">0</div>
+                <div class="badge bg-green-100 text-green-800 mt-2">Today's highest</div>
+            </div>
+        </div>
+
+        <!-- Additional Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-sm font-medium text-gray-500">Average Session</div>
+                    <i data-lucide="activity" class="h-5 w-5 text-gray-400"></i>
+                </div>
+                <div class="text-2xl font-bold text-gray-900" id="averageSession">0h 0m</div>
+                <div class="text-xs text-gray-500">Per client session duration</div>
+                
+                <!-- Mini chart -->
+                <div class="mt-4">
+                    <div class="chart-container" id="sessionChart">
+                        <!-- Chart bars will be generated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-sm font-medium text-gray-500">Connection Status</div>
+                    <i data-lucide="user-x" class="h-5 w-5 text-gray-400"></i>
+                </div>
+                <div class="space-y-3" id="connectionBadges">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <span class="status-indicator status-online"></span>
+                            <span class="text-sm text-gray-600">Online</span>
+                        </div>
+                        <span class="font-medium" id="onlineCount">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <span class="status-indicator status-idle"></span>
+                            <span class="text-sm text-gray-600">Idle</span>
+                        </div>
+                        <span class="font-medium" id="idleCount">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <span class="status-indicator status-offline"></span>
+                            <span class="text-sm text-gray-600">Offline</span>
+                        </div>
+                        <span class="font-medium" id="offlineCount">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-sm font-medium text-gray-500">System Health</div>
+                    <i data-lucide="activity" class="h-5 w-5 text-green-500"></i>
+                </div>
+                <div class="text-2xl font-bold text-green-600">Healthy</div>
+                <div class="text-xs text-gray-500 mb-4">All systems operational</div>
+                
+                <!-- Health indicators -->
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Server Load</span>
+                        <span class="font-medium text-green-600">24%</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Response Time</span>
+                        <span class="font-medium text-green-600">42ms</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Uptime</span>
+                        <span class="font-medium text-green-600">99.8%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clients List -->
+        <div class="card overflow-hidden">
+            <div class="p-6 border-b bg-gray-50">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                            <i data-lucide="users" class="h-5 w-5 text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">Client Connections</h2>
+                            <p class="text-sm text-gray-500">Manage and monitor all client connections</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary flex items-center space-x-2">
+                        <i data-lucide="plus" class="h-4 w-4"></i>
+                        <span>Add Client</span>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- Search and Filter -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4"></i>
+                        <input type="text" id="searchInput" placeholder="Search clients by name, email, or location..." class="input pl-10">
+                    </div>
+                    <select id="statusFilter" class="select w-full sm:w-48">
+                        <option value="all">All Status</option>
+                        <option value="online">Online</option>
+                        <option value="idle">Idle</option>
+                        <option value="offline">Offline</option>
+                    </select>
+                    <button class="btn bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 flex items-center space-x-2">
+                        <i data-lucide="filter" class="h-4 w-4"></i>
+                        <span>Filters</span>
+                    </button>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-gray-500" id="clientCount">Showing 0 of 0 clients</div>
+                    <div class="flex space-x-2">
+                        <button class="p-2 rounded-lg hover:bg-gray-100">
+                            <i data-lucide="list" class="h-4 w-4 text-gray-500"></i>
+                        </button>
+                        <button class="p-2 rounded-lg bg-gray-100">
+                            <i data-lucide="grid" class="h-4 w-4 text-gray-700"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Client Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="clientGrid">
+                    <!-- Client cards will be inserted here -->
+                </div>
+                
+                <div id="noResults" class="text-center py-12 hidden">
+                    <div class="text-gray-400 mb-4">
+                        <i data-lucide="search" class="h-12 w-12 mx-auto"></i>
+                    </div>
+                    <div class="text-gray-500 font-medium">No clients found matching your criteria.</div>
+                    <p class="text-sm text-gray-400 mt-1">Try adjusting your search or filter parameters</p>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="flex justify-center items-center space-x-2 pt-4 border-t">
+                    <button class="p-2 rounded-lg hover:bg-gray-100">
+                        <i data-lucide="chevron-left" class="h-4 w-4 text-gray-500"></i>
+                    </button>
+                    <span class="text-sm text-gray-500">Page 1 of 1</span>
+                    <button class="p-2 rounded-lg hover:bg-gray-100">
+                        <i data-lucide="chevron-right" class="h-4 w-4 text-gray-500"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Mock data and state
+        let clients = [];
+        let filteredClients = [];
+        let searchTerm = '';
+        let statusFilter = 'all';
+
+        // Generate mock client data
+        function generateMockClient(id) {
+            const names = ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Wilson', 'David Brown', 'Lisa Davis', 'Tom Anderson', 'Emma Taylor'];
+            const locations = ['New York, US', 'London, UK', 'Tokyo, JP', 'Sydney, AU', 'Berlin, DE', 'Toronto, CA', 'Mumbai, IN', 'São Paulo, BR'];
+            const devices = ['Desktop', 'Mobile', 'Tablet'];
+            const browsers = ['Chrome', 'Firefox', 'Safari', 'Edge'];
+            const statuses = ['online', 'offline', 'idle'];
+            
+            const name = names[Math.floor(Math.random() * names.length)];
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            const connectedAt = new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000);
+            const lastSeen = status === 'online' ? new Date() : new Date(Date.now() - Math.random() * 60 * 60 * 1000);
+            
+            return {
+                id,
+                name,
+                email: `${name.toLowerCase().replace(' ', '.')}@example.com`,
+                status,
+                lastSeen,
+                connectedAt,
+                ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+                location: locations[Math.floor(Math.random() * locations.length)],
+                device: devices[Math.floor(Math.random() * devices.length)],
+                browser: browsers[Math.floor(Math.random() * browsers.length)],
+                sessionDuration: Math.floor(Math.random() * 480) + 5,
+            };
+        }
+
+        // Initialize clients
+        function initializeClients() {
+            clients = Array.from({ length: 12 }, (_, i) => generateMockClient(`client-${i + 1}`));
+            updateStats();
+            filterClients();
+            generateSessionChart();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const activeClients = clients.filter(c => c.status === 'online').length;
+            const idleClients = clients.filter(c => c.status === 'idle').length;
+            const offlineClients = clients.filter(c => c.status === 'offline').length;
+            const averageSessionTime = clients.length > 0 
+                ? Math.round(clients.reduce((acc, c) => acc + c.sessionDuration, 0) / clients.length)
+                : 0;
+
+            document.getElementById('totalClients').textContent = clients.length;
+            document.getElementById('activeClients').textContent = activeClients;
+            document.getElementById('idleClients').textContent = idleClients;
+            document.getElementById('peakConnections').textContent = Math.max(activeClients + idleClients, 8);
+            document.getElementById('activePercentage').textContent = `${Math.round((activeClients / clients.length) * 100)}% online`;
+            
+            document.getElementById('onlineCount').textContent = activeClients;
+            document.getElementById('idleCount').textContent = idleClients;
+            document.getElementById('offlineCount').textContent = offlineClients;
+            
+            const hours = Math.floor(averageSessionTime / 60);
+            const minutes = averageSessionTime % 60;
+            document.getElementById('averageSession').textContent = `${hours}h ${minutes}m`;
+        }
+
+        // Generate session duration chart
+        function generateSessionChart() {
+            const chartContainer = document.getElementById('sessionChart');
+            chartContainer.innerHTML = '';
+            
+            // Generate random data for the chart
+            for (let i = 0; i < 12; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.height = `${Math.random() * 80 + 20}%`;
+                chartContainer.appendChild(bar);
+            }
+        }
+
+        // Format time ago
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+            if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            return 'Just now';
+        }
+
+        // Format session duration
+        function formatSessionDuration(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            if (hours > 0) return `${hours}h ${mins}m`;
+            return `${mins}m`;
+        }
+
+        // Get device icon
+        function getDeviceIcon(device) {
+            switch (device.toLowerCase()) {
+                case 'mobile': return 'smartphone';
+                case 'tablet': return 'tablet';
+                default: return 'monitor';
+            }
+        }
+
+        // Get status color
+        function getStatusColor(status) {
+            switch (status) {
+                case 'online': return 'bg-green-100 text-green-800';
+                case 'idle': return 'bg-yellow-100 text-yellow-800';
+                case 'offline': return 'bg-gray-100 text-gray-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Create client card HTML
+        function createClientCard(client) {
+            const initials = client.name.split(' ').map(n => n[0]).join('');
+            
+            return `
+                <div class="client-card card p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600 font-semibold flex items-center justify-center text-base">
+                                ${initials}
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">${client.name}</h3>
+                                <p class="text-xs text-gray-500">${client.email}</p>
+                            </div>
+                        </div>
+                        <span class="badge ${getStatusColor(client.status)}">
+                            <div class="flex items-center space-x-1">
+                                <div class="w-2 h-2 rounded-full ${client.status === 'online' ? 'bg-green-500' : client.status === 'idle' ? 'bg-yellow-500' : 'bg-gray-500'} ${client.status === 'online' ? 'animate-pulse' : ''}"></div>
+                                <span class="capitalize text-xs font-medium">${client.status}</span>
+                            </div>
+                        </span>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="flex items-center space-x-2 text-gray-500">
+                                <i data-lucide="map-pin" class="h-3 w-3"></i>
+                                <span>${client.location}</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-gray-500">
+                                <i data-lucide="${getDeviceIcon(client.device)}" class="h-3 w-3"></i>
+                                <span>${client.device}</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-gray-500">
+                                <i data-lucide="wifi" class="h-3 w-3"></i>
+                                <span>${client.ipAddress}</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-gray-500">
+                                <i data-lucide="clock" class="h-3 w-3"></i>
+                                <span>${formatSessionDuration(client.sessionDuration)}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="pt-3 border-t border-gray-100">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Last seen:</span>
+                                <span class="font-medium">${formatTimeAgo(client.lastSeen)}</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Browser:</span>
+                                <span class="font-medium">${client.browser}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex space-x-2">
+                        <button class="flex-1 btn bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs py-2">
+                            <i data-lucide="message-square" class="h-3 w-3 mr-1"></i>
+                            Message
+                        </button>
+                        <button class="flex-1 btn bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs py-2">
+                            <i data-lucide="user" class="h-3 w-3 mr-1"></i>
+                            Profile
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Filter clients
+        function filterClients() {
+            filteredClients = clients.filter(client => {
+                const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                   client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                   client.location.toLowerCase().includes(searchTerm.toLowerCase());
+                
+                const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
+                
+                return matchesSearch && matchesStatus;
+            });
+            
+            renderClients();
+        }
+
+        // Render clients
+        function renderClients() {
+            const clientGrid = document.getElementById('clientGrid');
+            const clientCount = document.getElementById('clientCount');
+            const noResults = document.getElementById('noResults');
+            
+            clientCount.textContent = `Showing ${filteredClients.length} of ${clients.length} clients`;
+            
+            if (filteredClients.length === 0) {
+                clientGrid.innerHTML = '';
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+                clientGrid.innerHTML = filteredClients.map(createClientCard).join('');
+                // Re-initialize icons for new content
+                lucide.createIcons();
+            }
+        }
+
+        // Update last updated time
+        function updateLastUpdated() {
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent = `Last updated: ${now.toLocaleTimeString()}`;
+        }
+
+        // Simulate real-time updates
+        function simulateRealTimeUpdates() {
+            clients = clients.map(client => {
+                const shouldUpdate = Math.random() < 0.3;
+                if (!shouldUpdate) return client;
+
+                const statuses = ['online', 'offline', 'idle'];
+                const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                
+                return {
+                    ...client,
+                    status: newStatus,
+                    lastSeen: newStatus === 'online' ? new Date() : client.lastSeen,
+                    sessionDuration: newStatus === 'online' 
+                        ? client.sessionDuration + Math.floor(Math.random() * 5)
+                        : client.sessionDuration,
+                };
+            });
+            
+            updateStats();
+            filterClients();
+            updateLastUpdated();
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchTerm = e.target.value;
+            filterClients();
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', (e) => {
+            statusFilter = e.target.value;
+            filterClients();
+        });
+
+        // Initialize
+        initializeClients();
+        updateLastUpdated();
+
+        // Start real-time updates
+        setInterval(simulateRealTimeUpdates, 3000);
+        setInterval(updateLastUpdated, 1000);
+    </script>
+</body>
+</html>
